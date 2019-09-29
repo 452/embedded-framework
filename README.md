@@ -8,3 +8,6 @@ This framework allow you to easy change and use any IO provider
 
 under development
 this code work, but be refactored
+
+## Usage example
+[BME280 example](src/test/java/ua/kovel/java/i2c/devices/BME280Test.java)
