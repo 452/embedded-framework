@@ -72,5 +72,6 @@ public class BME280Test {
 
         bme280.calc();
         assertNotEquals(0, bme280.getTemperature());
+        bus.close();
     }
 }
