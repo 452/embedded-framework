@@ -1,7 +1,6 @@
 package ua.kovel.java.uart.devices;
 
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -43,8 +42,8 @@ public class ESP8266ATTest {
     }
 
     @Test
-    public void responseBodyTest() {
-        assertThat(RawHttpResponse.getBody(EspAtResponseMock.curl_http1_1_Response200OK_GET_452())).as("Expected response text is '452'").isEqualTo("452");
+    public void espATresponseBodyTest() {
+        assertThat(RawHttpResponse.getBody(EspAtResponseMock.esp_at_http1_1_Response200OK_GET_452())).as("Expected response text is '452'").isEqualTo("452");
     }
 
     @Test
@@ -60,7 +59,7 @@ public class ESP8266ATTest {
     }
 
     @Test
-    @Ignore
+//    @Ignore
     public void esp8266WiFiConectionTest() {
         setup();
         System.out.println("Begin");

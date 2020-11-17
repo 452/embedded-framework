@@ -68,7 +68,7 @@ public class ESP8266AT {
             }
         }
         RawHttp rawHttp = new RawHttp();
-        return "{" + rawHttp.parseResponse(str).getBody() + "}";// .replace("\n", " ");
+        return rawHttp.parseResponse(str).getBody();
     }
 
     public void update() {
@@ -313,17 +313,17 @@ class RawHttpResponse {
     }
 
     public static String getBody(String response) {
-        String result = response;
-        String s1 = "\r\n\r\n";
-        String s2 = "\r\n";
-        int startBodyLength = response.indexOf(s1, response.indexOf("+IPD,")) + s1.length();
+        String s0 = "\r\r+IPD,";
+        String s1 = "\r\r";
+        String s2 = "\r";
+        int startBodyLength = response.indexOf(s1, response.indexOf(s0) + s0.length()) + s1.length();
         int endBodyLength = response.indexOf(s2, startBodyLength);
         int bodyLength = Integer.valueOf(response.substring(startBodyLength, endBodyLength));
 //        int endBody = response.indexOf(s3) - s3.length();
 //        if (startBodyLength < 1 || endBody < 1) {
 //            throw new RuntimeException("Unable to parse http body response " + result);
 //        }
-        return result.substring(endBodyLength + s2.length(), endBodyLength + s2.length() + bodyLength);
+        return response.substring(endBodyLength + s2.length(), endBodyLength + s2.length() + bodyLength);
     }
 }
 
