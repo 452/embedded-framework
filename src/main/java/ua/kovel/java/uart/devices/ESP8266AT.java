@@ -44,16 +44,19 @@ public class ESP8266AT {
         return source.indexOf(expected) >= 0;
     }
 
-    public String httpGet(String host, String path) {
+    public String httpGet(String host, int port, String path) {
+        if (path == null || path.isEmpty()) {
+            path = "/";
+        }
         int linkId = 4;
-        sendCommand("AT+CIPSTART=" + linkId + ",\"TCP\",\"" + host + "\"," + 80);
+        sendCommand("AT+CIPSTART=" + linkId + ",\"TCP\",\"" + host + "\"," + port);
         expectOK();
         String cmd = "GET " + path + " HTTP/1.1\r\n" + "Host: " + host + LINE_END + "Connection: close\r\n\r\n";
         sendCommand("AT+CIPSEND=" + linkId + "," + cmd.length());
         expectString(">", 1000);
         sendData(cmd);
         // expectSendOK();
-//         expectString(linkId + ",CLOSED", 3000);
+        // expectString(linkId + ",CLOSED", 3000);
         // delay(1000);
         // sendCommand("AT+CIPCLOSE=" + linkId);
         // expectOK();
@@ -128,6 +131,9 @@ public class ESP8266AT {
     }
 
     public void connectToWiFi(String ssid, String password) {
+        if (ssid == null || ssid.isEmpty() || password == null || password.isEmpty()) {
+            throw new RuntimeException("Please provide wifi ssid and password");
+        }
         stationMode();
         sendCommand("AT+CWJAP=\"" + ssid + "\",\"" + password + "\"");
         // expectOK();
@@ -312,18 +318,55 @@ class RawHttpResponse {
         return getBody(response);
     }
 
+    private static boolean contains(String source, String expected) {
+        return source.indexOf(expected) >= 0;
+    }
+
     public static String getBody(String response) {
+        if (response == null || response.isEmpty()) {
+            throw new RuntimeException("Have no response from ESP AT WiFi shield, check wire connection");
+        }
+        if (contains(response, "\rContent-Length:")) {
+            return parseBodyWithContentLengthHeaderAlg(response);
+        }
+        return parseBodyWithHexContentLengthAlg(response);
+    }
+
+    private static String parseBodyWithContentLengthHeaderAlg(String response) {
         String s0 = "\r\r+IPD,";
         String s1 = "\r\r";
         String s2 = "\r";
+        String s3 = "\rContent-Length: ";
+        int startBodyLength = response.indexOf(s3, response.indexOf(s0) + s0.length()) + s3.length();
+        int endBodyLength = response.indexOf(s2, startBodyLength);
+        if (startBodyLength < 1 || endBodyLength < 1) {
+            throw new RuntimeException("Unable to parse http body response " + response);
+        }
+        int bodyLength = Integer.valueOf(response.substring(startBodyLength, endBodyLength));
+        int startBody = response.indexOf(s1, endBodyLength + s2.length()) + s1.length();
+        int endBody = (startBody + bodyLength) - s1.length() - s2.length() - 1;
+        String substring = response.substring(startBody, endBody);
+        return substring;
+    }
+
+    private static String parseBodyWithHexContentLengthAlg(String response) {
+        String s0 = "\r\r+IPD,";
+        String s1 = "\r\r";
+        String s2 = "\r";
+        String s3 = "0\r\r";
         int startBodyLength = response.indexOf(s1, response.indexOf(s0) + s0.length()) + s1.length();
         int endBodyLength = response.indexOf(s2, startBodyLength);
-        int bodyLength = Integer.valueOf(response.substring(startBodyLength, endBodyLength));
-//        int endBody = response.indexOf(s3) - s3.length();
-//        if (startBodyLength < 1 || endBody < 1) {
-//            throw new RuntimeException("Unable to parse http body response " + result);
-//        }
-        return response.substring(endBodyLength + s2.length(), endBodyLength + s2.length() + bodyLength);
+        if (startBodyLength < 1 || endBodyLength < 1) {
+            throw new RuntimeException("Unable to parse http body response " + response);
+        }
+        int bodyLength = Integer.valueOf(response.substring(startBodyLength, endBodyLength), 16);
+        int startBody = endBodyLength + s2.length();
+        int endBody = (endBodyLength + bodyLength) - s3.length();
+        if (startBody > endBody) {
+            endBody = (endBodyLength + bodyLength) + s2.length();
+        }
+        String substring = response.substring(startBody, endBody);
+        return substring;
     }
 }
 
