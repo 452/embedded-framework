@@ -45,4 +45,8 @@ public class EspAtResponseMock {
         return "\rRecv 73 bytes\r\rSEND OK\r\r+IPD,4,71:HTTP/1.1 404 Not Found\rConnection: close\rContent-Type: text/plain\r\r\r+IPD,4,84:No response could be served as there are no stub mappings in this WireMock instance.4,CLOSED\r";
     }
 
+    public static String udpSensorResponse() {
+        return "\rRecv 3 bytes\r\rSEND OK\r\r+IPD,4,107:BME280;1606057304;4.4;1002.3;91.7;63.8;-89;63.9990234375;1;202004152002;1042542;1458400;5C:CF:7F:0F:E8:6E;4,CLOSED\r\rOK\r";
+    }
+
 }

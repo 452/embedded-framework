@@ -7,7 +7,11 @@ import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 
+import java.io.IOException;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.net.SocketException;
 import java.net.UnknownHostException;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
@@ -115,6 +119,41 @@ public class ESP8266ATTest {
     }
 
     @Test
+    public void mockUdpSensorResponseTest() {
+        assertThat(shield.parseUdpBody(EspAtResponseMock.udpSensorResponse()))
+                .isEqualTo(
+                        "BME280;1606057304;4.4;1002.3;91.7;63.8;-89;63.9990234375;1;202004152002;1042542;1458400;5C:CF:7F:0F:E8:6E;"
+                );
+    }
+
+    @Test
+    public void udpSensorInCurrentNetworkTest() {
+        WeatherSensorClient udp = new WeatherSensorClient();
+        assertThat(udp.sendCommand("1"))
+                .contains(
+                        "BME280;"
+                );
+    }
+
+    @Test
+    public void shieldUdpSensorInCurrentNetworkTest() {
+        connectToWifi();
+        assertThat(shield.udpSendReceive("192.168.30.70", 6930, 1234, "1"))
+                .contains(
+                        "BME280;"
+                );
+    }
+
+    @Test
+    public void shieldUdpBroadcastSensorInCurrentNetworkTest() {
+        connectToWifi();
+        assertThat(shield.udpSendReceive("255.255.255.255", 6930, 1234, "1"))
+                .contains(
+                        "BME280;"
+                );
+    }
+
+    @Test
     public void queryParamTest() {
         // http://wiremock.org/docs/getting-started
         connectToWifi();
@@ -200,6 +239,50 @@ public class ESP8266ATTest {
             };
             shield.configure(config);
             shield.switchesEchoOff();
+        }
+    }
+
+    public class WeatherSensorClient {
+        private DatagramSocket socket;
+        private InetAddress address;
+        private int port;
+
+        private byte[] buf;
+
+        public WeatherSensorClient() {
+            this("255.255.255.255", 6930);
+        }
+
+        public WeatherSensorClient(String address, int port) {
+            try {
+                socket = new DatagramSocket();
+                this.address = InetAddress.getByName(address);
+                this.port = port;
+            } catch (UnknownHostException | SocketException e) {
+                e.printStackTrace();
+            }
+        }
+
+        public String sendCommand(String msg) {
+            String received = null;
+            buf = msg.getBytes();
+            DatagramPacket packet = new DatagramPacket(buf, buf.length, address, port);
+            try {
+                socket.send(packet);
+                buf = new byte[150];
+                packet = new DatagramPacket(buf, buf.length);
+                socket.receive(packet);
+                received = new String(
+                        packet.getData(), 0, packet.getLength()
+                );
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            return received;
+        }
+
+        public void close() {
+            socket.close();
         }
     }
 }

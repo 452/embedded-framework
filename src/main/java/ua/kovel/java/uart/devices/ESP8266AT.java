@@ -44,6 +44,32 @@ public class ESP8266AT {
         return source.indexOf(expected) >= 0;
     }
 
+    public String udpSendReceive(String host, int remotePort, int localPort, String data) {
+        // https://www.espressif.com/sites/default/files/documentation/4b-esp8266_at_command_examples_en.pdf
+        int linkId = 4;
+        sendCommand("AT+CIPSTART=" + linkId + ",\"UDP\",\"" + host + "\"," + remotePort + "," + localPort + ",0");
+        expectOK();
+        sendCommand("AT+CIPSEND=" + linkId + "," + data.length() + ",\"" + host + "\"," + remotePort);
+        expectString(">", 1000);
+        sendData(data);
+        delay(1000);
+        sendCommand("AT+CIPCLOSE=" + linkId);
+        int timeout = 3000;
+        long start = System.currentTimeMillis();
+        String str = null;
+        while (timeout == 0 || System.currentTimeMillis() < start + timeout) {
+            str = read();
+            if (contains(str, linkId + ",CLOSED\r")) {
+                break;
+            }
+        }
+        return parseUdpBody(str);
+    }
+
+    public String parseUdpBody(String data) {
+        return data;
+    }
+
     public String httpGet(String host, int port, String path) {
         if (path == null || path.isEmpty()) {
             path = "/";
@@ -109,6 +135,7 @@ public class ESP8266AT {
     }
 
     public String getIpAndMacAddressAsString() {
+        debug("Connection Information");
         sendCommand("AT+CIFSR");
         return extractData();
     }
@@ -143,6 +170,7 @@ public class ESP8266AT {
 
     public void accessPoint(String ssid, String password) {
         stationMode();
+        debug("Connecting to AP");
         sendCommand("AT+CWSAP=\"" + ssid + "\", \"" + password + ", 5, 3");
         expectOK();
     }
@@ -163,11 +191,13 @@ public class ESP8266AT {
     }
 
     public void multipleConnectionModeOn() {
+        debug("Turn on Multiple Connections");
         sendCommand("AT+CIPMUX=1");
         expectOK();
     }
 
     public void multipleConnectionModeOff() {
+        debug("Turn off Multiple Connections");
         sendCommand("AT+CIPMUX=0");
         expectOK();
     }
