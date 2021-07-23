@@ -359,7 +359,8 @@ class RawHttpResponse {
         if (contains(response, "\rContent-Length:")) {
             return parseBodyWithContentLengthHeaderAlg(response);
         }
-        return parseBodyWithHexContentLengthAlg(response);
+        // return parseBodyWithHexContentLengthAlg(response);
+        return parseBodyWithNumberContentLengthAlg(response);
     }
 
     private static String parseBodyWithContentLengthHeaderAlg(String response) {
@@ -369,7 +370,7 @@ class RawHttpResponse {
         String s3 = "\rContent-Length: ";
         int startBodyLength = response.indexOf(s3, response.indexOf(s0) + s0.length()) + s3.length();
         int endBodyLength = response.indexOf(s2, startBodyLength);
-        if (startBodyLength < 1 || endBodyLength < 1) {
+        if (startBodyLength < 1 || endBodyLength < 1 || startBodyLength == endBodyLength) {
             throw new RuntimeException("Unable to parse http body response " + response);
         }
         int bodyLength = Integer.valueOf(response.substring(startBodyLength, endBodyLength));
@@ -386,12 +387,32 @@ class RawHttpResponse {
         String s3 = "0\r\r";
         int startBodyLength = response.indexOf(s1, response.indexOf(s0) + s0.length()) + s1.length();
         int endBodyLength = response.indexOf(s2, startBodyLength);
-        if (startBodyLength < 1 || endBodyLength < 1) {
+        if (startBodyLength < 1 || endBodyLength < 1 || startBodyLength == endBodyLength) {
             throw new RuntimeException("Unable to parse http body response " + response);
         }
         int bodyLength = Integer.valueOf(response.substring(startBodyLength, endBodyLength), 16);
         int startBody = endBodyLength + s2.length();
         int endBody = (endBodyLength + bodyLength) - s3.length();
+        if (startBody > endBody) {
+            endBody = (endBodyLength + bodyLength) + s2.length();
+        }
+        String substring = response.substring(startBody, endBody);
+        return substring;
+    }
+
+    private static String parseBodyWithNumberContentLengthAlg(String response) {
+        String s0 = "\r\r\r+IPD,";
+        String s1 = ",";
+        String s2 = ":";
+        int ipd = response.indexOf(s0) + s0.length();
+        int startBodyLength = response.indexOf(s1, ipd) + s1.length();
+        int endBodyLength = response.indexOf(s2, startBodyLength);
+        if (startBodyLength < 1 || endBodyLength < 1 || startBodyLength == endBodyLength) {
+            throw new RuntimeException("Unable to parse http body response " + response);
+        }
+        int bodyLength = Integer.valueOf(response.substring(startBodyLength, endBodyLength));
+        int startBody = endBodyLength + s2.length();
+        int endBody = (s2.length() + endBodyLength + bodyLength);
         if (startBody > endBody) {
             endBody = (endBodyLength + bodyLength) + s2.length();
         }

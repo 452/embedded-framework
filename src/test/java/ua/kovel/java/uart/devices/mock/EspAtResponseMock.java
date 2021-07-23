@@ -16,6 +16,13 @@ public class EspAtResponseMock {
                 + "Mar 13 2018 09:37:06";
     }
 
+    public static String version1740() {
+        return "AT version:1.7.4.0(May 11 2020 19:13:04)\r\n"
+                + "SDK version:3.0.4(9532ceb)\r\n"
+                + "compile time:May 27 2020 10:12:22\r\n"
+                + "Bin version(Wroom 02):1.7.4";
+    }
+
     public static String ipAndMacResponse() {
         return "+CIFSR:STAIP,\"192.168.3.99\"\r\n"
                 + "+CIFSR:STAMAC,\"84:f3:eb:cb:87:b4\"\r\n";
@@ -39,6 +46,10 @@ public class EspAtResponseMock {
 
     public static String response200OK_GET_VaryAcceptEncodingChunked() {
         return "\rRecv 73 bytes\r\rSEND OK\r\r+IPD,4,152:HTTP/1.1 200 OK\rConnection: close\rContent-Type: text/xml\rMatched-Stub-Id: c1eca6b5-d44e-4644-ae97-c311c18600bf\rVary: Accept-Encoding, User-Agent\r\r\r+IPD,4,7:<respon\r+IPD,4,7:se>Some\r+IPD,4,7:  cont\r+IPD,4,7:ent\r</r\r+IPD,4,8:esponse>4,CLOSED\r";
+    }
+
+    public static String response200OK_GET_XML() {
+        return "\rRecv 99 bytes\r\rSEND OK\r\r+IPD,4,152:HTTP/1.1 200 OK\rConnection: close\rContent-Type: text/xml\rMatched-Stub-Id: 62af3ee5-07ef-49d3-a604-0e99f1a97531\rVary: Accept-Encoding, User-Agent\r\r\r+IPD,4,34:<response>Some content\r</response>4,CLOSED\r";
     }
 
     public static String response404_GET() {
